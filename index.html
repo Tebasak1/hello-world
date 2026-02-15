@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen Sky</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh; /* dynamic viewport height – fixes iOS Safari address bar */
+      background: linear-gradient(180deg, #1a6fc4 0%, #5ba3e6 40%, #87ceeb 70%, #b8e4f9 100%);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Cloud container */
+    .sky {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    /* Individual cloud shapes built from CSS */
+    .cloud {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      opacity: 0.9;
+      filter: blur(1px);
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: inherit;
+      border-radius: 50%;
+    }
+
+    /* Cloud type 1 – wide and flat */
+    .cloud--1 {
+      width: 200px;
+      height: 60px;
+      border-radius: 60px;
+    }
+    .cloud--1::before {
+      width: 100px;
+      height: 80px;
+      top: -40px;
+      left: 30px;
+    }
+    .cloud--1::after {
+      width: 120px;
+      height: 70px;
+      top: -30px;
+      right: 20px;
+    }
+
+    /* Cloud type 2 – tall and puffy */
+    .cloud--2 {
+      width: 150px;
+      height: 50px;
+      border-radius: 50px;
+    }
+    .cloud--2::before {
+      width: 80px;
+      height: 70px;
+      top: -45px;
+      left: 15px;
+    }
+    .cloud--2::after {
+      width: 100px;
+      height: 60px;
+      top: -25px;
+      right: 10px;
+    }
+
+    /* Cloud type 3 – small wispy */
+    .cloud--3 {
+      width: 120px;
+      height: 35px;
+      border-radius: 35px;
+      opacity: 0.7;
+    }
+    .cloud--3::before {
+      width: 60px;
+      height: 50px;
+      top: -30px;
+      left: 20px;
+    }
+    .cloud--3::after {
+      width: 70px;
+      height: 40px;
+      top: -15px;
+      right: 10px;
+    }
+
+    /* Cloud type 4 – large billowy */
+    .cloud--4 {
+      width: 260px;
+      height: 70px;
+      border-radius: 70px;
+    }
+    .cloud--4::before {
+      width: 130px;
+      height: 100px;
+      top: -55px;
+      left: 40px;
+    }
+    .cloud--4::after {
+      width: 150px;
+      height: 80px;
+      top: -35px;
+      right: 25px;
+    }
+
+    /* Cloud type 5 – tiny accent */
+    .cloud--5 {
+      width: 80px;
+      height: 25px;
+      border-radius: 25px;
+      opacity: 0.6;
+    }
+    .cloud--5::before {
+      width: 40px;
+      height: 35px;
+      top: -20px;
+      left: 10px;
+    }
+    .cloud--5::after {
+      width: 50px;
+      height: 30px;
+      top: -12px;
+      right: 5px;
+    }
+
+    /* Drift animation */
+    @keyframes drift {
+      from { transform: translateX(-320px); }
+      to   { transform: translateX(calc(100vw + 320px)); }
+    }
+
+    /* Positioned clouds with staggered timing */
+    .c1  { top: 8%;   animation: drift 45s linear infinite; }
+    .c2  { top: 18%;  animation: drift 60s linear infinite; animation-delay: -20s; }
+    .c3  { top: 30%;  animation: drift 55s linear infinite; animation-delay: -35s; }
+    .c4  { top: 5%;   animation: drift 70s linear infinite; animation-delay: -10s; }
+    .c5  { top: 42%;  animation: drift 50s linear infinite; animation-delay: -40s; }
+    .c6  { top: 55%;  animation: drift 65s linear infinite; animation-delay: -5s; }
+    .c7  { top: 15%;  animation: drift 48s linear infinite; animation-delay: -25s; }
+    .c8  { top: 68%;  animation: drift 58s linear infinite; animation-delay: -15s; }
+    .c9  { top: 35%;  animation: drift 72s linear infinite; animation-delay: -50s; }
+    .c10 { top: 75%;  animation: drift 52s linear infinite; animation-delay: -30s; }
+    .c11 { top: 22%;  animation: drift 63s linear infinite; animation-delay: -45s; }
+    .c12 { top: 60%;  animation: drift 47s linear infinite; animation-delay: -8s; }
+
+    /* Center content */
+    .center {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      height: 100dvh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* Quote display */
+    .quote-box {
+      max-width: 640px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+      padding: 1.5rem 2rem;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .quote-box.visible {
+      opacity: 1;
+    }
+
+    .quote-text {
+      font-size: 1.5rem;
+      line-height: 1.6;
+      color: #fff;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      font-style: italic;
+    }
+
+    .quote-author {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.85);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.25);
+    }
+
+    /* The button */
+    .zen-btn {
+      padding: 1rem 2.5rem;
+      font-size: 1.15rem;
+      font-family: 'Georgia', serif;
+      color: #1a6fc4;
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      letter-spacing: 0.05em;
+    }
+
+    .zen-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      background: #fff;
+    }
+
+    .zen-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    /* ===== Tablet (768px and below) ===== */
+    @media (max-width: 768px) {
+      .cloud--1        { width: 140px; height: 42px; border-radius: 42px; }
+      .cloud--1::before { width: 70px;  height: 56px; top: -28px; left: 20px; }
+      .cloud--1::after  { width: 84px;  height: 49px; top: -21px; right: 14px; }
+
+      .cloud--2        { width: 105px; height: 35px; border-radius: 35px; }
+      .cloud--2::before { width: 56px;  height: 49px; top: -32px; left: 10px; }
+      .cloud--2::after  { width: 70px;  height: 42px; top: -18px; right: 7px; }
+
+      .cloud--3        { width: 84px;  height: 24px; border-radius: 24px; }
+      .cloud--3::before { width: 42px;  height: 35px; top: -21px; left: 14px; }
+      .cloud--3::after  { width: 49px;  height: 28px; top: -10px; right: 7px; }
+
+      .cloud--4        { width: 182px; height: 49px; border-radius: 49px; }
+      .cloud--4::before { width: 91px;  height: 70px; top: -38px; left: 28px; }
+      .cloud--4::after  { width: 105px; height: 56px; top: -24px; right: 18px; }
+
+      .cloud--5        { width: 56px;  height: 18px; border-radius: 18px; }
+      .cloud--5::before { width: 28px;  height: 24px; top: -14px; left: 7px; }
+      .cloud--5::after  { width: 35px;  height: 21px; top: -8px;  right: 4px; }
+
+      .quote-box {
+        max-width: 90vw;
+        min-height: 100px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .quote-text {
+        font-size: 1.25rem;
+        line-height: 1.5;
+      }
+
+      .quote-author {
+        font-size: 0.9rem;
+      }
+
+      .zen-btn {
+        padding: 0.9rem 2rem;
+        font-size: 1.05rem;
+      }
+    }
+
+    /* ===== Phone (480px and below) ===== */
+    @media (max-width: 480px) {
+      .center {
+        padding: 1.25rem;
+      }
+
+      .cloud--1        { width: 100px; height: 30px; border-radius: 30px; }
+      .cloud--1::before { width: 50px;  height: 40px; top: -20px; left: 14px; }
+      .cloud--1::after  { width: 60px;  height: 35px; top: -15px; right: 10px; }
+
+      .cloud--2        { width: 75px;  height: 25px; border-radius: 25px; }
+      .cloud--2::before { width: 40px;  height: 35px; top: -22px; left: 8px; }
+      .cloud--2::after  { width: 50px;  height: 30px; top: -12px; right: 5px; }
+
+      .cloud--3        { width: 60px;  height: 18px; border-radius: 18px; }
+      .cloud--3::before { width: 30px;  height: 25px; top: -15px; left: 10px; }
+      .cloud--3::after  { width: 35px;  height: 20px; top: -8px;  right: 5px; }
+
+      .cloud--4        { width: 130px; height: 35px; border-radius: 35px; }
+      .cloud--4::before { width: 65px;  height: 50px; top: -28px; left: 20px; }
+      .cloud--4::after  { width: 75px;  height: 40px; top: -18px; right: 12px; }
+
+      .cloud--5        { width: 40px;  height: 12px; border-radius: 12px; }
+      .cloud--5::before { width: 20px;  height: 18px; top: -10px; left: 5px; }
+      .cloud--5::after  { width: 25px;  height: 15px; top: -6px;  right: 3px; }
+
+      /* Hide some clouds to reduce clutter on small screens */
+      .c4, .c9, .c11 {
+        display: none;
+      }
+
+      .quote-box {
+        max-width: 95vw;
+        min-height: 80px;
+        padding: 1rem 1rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .quote-text {
+        font-size: 1.05rem;
+        line-height: 1.45;
+      }
+
+      .quote-author {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+      }
+
+      .zen-btn {
+        padding: 0.85rem 1.75rem;
+        font-size: 1rem;
+        min-height: 48px; /* touch-friendly minimum */
+        min-width: 160px;
+      }
+    }
+
+    /* ===== Small phone / landscape phone (360px and below) ===== */
+    @media (max-width: 360px) {
+      .quote-text {
+        font-size: 0.95rem;
+      }
+
+      .quote-author {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* ===== Landscape phones ===== */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .quote-box {
+        min-height: 60px;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem 1rem;
+      }
+
+      .quote-text {
+        font-size: 1rem;
+      }
+
+      .zen-btn {
+        padding: 0.7rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Clouds -->
+  <div class="sky">
+    <div class="cloud cloud--1 c1"></div>
+    <div class="cloud cloud--2 c2"></div>
+    <div class="cloud cloud--3 c3"></div>
+    <div class="cloud cloud--4 c4"></div>
+    <div class="cloud cloud--5 c5"></div>
+    <div class="cloud cloud--1 c6"></div>
+    <div class="cloud cloud--3 c7"></div>
+    <div class="cloud cloud--2 c8"></div>
+    <div class="cloud cloud--5 c9"></div>
+    <div class="cloud cloud--4 c10"></div>
+    <div class="cloud cloud--2 c11"></div>
+    <div class="cloud cloud--3 c12"></div>
+  </div>
+
+  <!-- Center content -->
+  <div class="center">
+    <div class="quote-box" id="quoteBox">
+      <p class="quote-text" id="quoteText"></p>
+      <p class="quote-author" id="quoteAuthor"></p>
+    </div>
+    <button class="zen-btn" id="zenBtn">Illuminate</button>
+  </div>
+
+  <script>
+    const quotes = [
+      { text: "The mind is everything. What you think you become.", author: "Buddha" },
+      { text: "In the beginner's mind there are many possibilities, but in the expert's mind there are few.", author: "Shunryu Suzuki" },
+      { text: "Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.", author: "Zen Proverb" },
+      { text: "The only true wisdom is in knowing you know nothing.", author: "Socrates" },
+      { text: "When you realize nothing is lacking, the whole world belongs to you.", author: "Lao Tzu" },
+      { text: "Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment.", author: "Buddha" },
+      { text: "He who knows others is wise; he who knows himself is enlightened.", author: "Lao Tzu" },
+      { text: "Sitting quietly, doing nothing, spring comes, and the grass grows by itself.", author: "Matsuo Basho" },
+      { text: "The wound is the place where the Light enters you.", author: "Rumi" },
+      { text: "No snowflake ever falls in the wrong place.", author: "Zen Proverb" },
+      { text: "The obstacle is the path.", author: "Zen Proverb" },
+      { text: "To a mind that is still, the whole universe surrenders.", author: "Zhuangzi" },
+      { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+      { text: "The unexamined life is not worth living.", author: "Socrates" },
+      { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle" },
+      { text: "Out beyond ideas of wrongdoing and rightdoing, there is a field. I'll meet you there.", author: "Rumi" },
+      { text: "Let go, or be dragged.", author: "Zen Proverb" },
+      { text: "When I let go of what I am, I become what I might be.", author: "Lao Tzu" },
+      { text: "Everything that has a beginning has an ending. Make your peace with that and all will be well.", author: "Buddha" },
+      { text: "The way out is through.", author: "Robert Frost" },
+      { text: "Man suffers only because he takes seriously what the gods made for fun.", author: "Alan Watts" },
+      { text: "Muddy water is best cleared by leaving it alone.", author: "Alan Watts" },
+      { text: "If you understand, things are just as they are. If you do not understand, things are just as they are.", author: "Zen Proverb" },
+      { text: "Wherever you go, there you are.", author: "Jon Kabat-Zinn" },
+      { text: "The present moment is filled with joy and happiness. If you are attentive, you will see it.", author: "Thich Nhat Hanh" },
+      { text: "Smile, breathe, and go slowly.", author: "Thich Nhat Hanh" },
+      { text: "What you are is what you have been. What you'll be is what you do now.", author: "Buddha" },
+      { text: "To know that you do not know is the best. To think you know when you do not is a disease.", author: "Lao Tzu" },
+      { text: "The flame that burns twice as bright burns half as long.", author: "Lao Tzu" },
+      { text: "Be still like a mountain and flow like a great river.", author: "Lao Tzu" },
+      { text: "Leap and the net will appear.", author: "John Burroughs" },
+      { text: "If you are depressed you are living in the past. If you are anxious you are living in the future. If you are at peace you are living in the present.", author: "Lao Tzu" },
+      { text: "The only way to make sense out of change is to plunge into it, move with it, and join the dance.", author: "Alan Watts" },
+      { text: "This is the real secret of life — to be completely engaged with what you are doing in the here and now.", author: "Alan Watts" },
+      { text: "Ten thousand flowers in spring, the moon in autumn, a cool breeze in summer, snow in winter. If your mind isn't clouded by unnecessary things, this is the best season of your life.", author: "Wu Men" },
+      { text: "Peace comes from within. Do not seek it without.", author: "Buddha" },
+      { text: "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.", author: "John Milton" },
+      { text: "Not until we are lost do we begin to understand ourselves.", author: "Henry David Thoreau" },
+      { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+      { text: "Have good trust in yourself, not in the one that you think you should be, but in the one that you are.", author: "Maezumi Roshi" }
+    ];
+
+    let lastIndex = -1;
+    const btn = document.getElementById('zenBtn');
+    const box = document.getElementById('quoteBox');
+    const textEl = document.getElementById('quoteText');
+    const authorEl = document.getElementById('quoteAuthor');
+
+    btn.addEventListener('click', () => {
+      // Fade out
+      box.classList.remove('visible');
+
+      setTimeout(() => {
+        // Pick a random quote different from the last
+        let idx;
+        do {
+          idx = Math.floor(Math.random() * quotes.length);
+        } while (idx === lastIndex && quotes.length > 1);
+        lastIndex = idx;
+
+        const q = quotes[idx];
+        textEl.textContent = `"${q.text}"`;
+        authorEl.textContent = `— ${q.author}`;
+
+        // Fade in
+        box.classList.add('visible');
+      }, 400);
+    });
+  </script>
+</body>
+</html>
